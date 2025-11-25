@@ -1,0 +1,35 @@
+{
+  "numeric_columns": [
+    "MedInc",
+    "HouseAge",
+    "AveRooms",
+    "AveBedrms",
+    "Population",
+    "AveOccup",
+    "Latitude",
+    "Longitude"
+  ],
+  "categorical_columns": [],
+  "results": {
+    "linear": {
+      "mse": 0.5558915986952444,
+      "r2": 0.5757877060324508,
+      "mae": 0.5332001304956565
+    },
+    "ridge": {
+      "best_alpha": 0.001,
+      "mse": 0.5558915618350113,
+      "r2": 0.5757877341612515,
+      "mae": 0.53320012333683
+    },
+    "lasso": {
+      "best_alpha": 0.001,
+      "mse": 0.5544913600832686,
+      "r2": 0.5768562568705682,
+      "mae": 0.5331447750392391
+    }
+  },
+  "dataset_rows": 20640,
+  "target_mean": 2.0685581690891475,
+  "target_std": 1.1539561587441385
+}
