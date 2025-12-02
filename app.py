@@ -2,7 +2,6 @@ import json
 from pathlib import Path
 
 import joblib
-import numpy as np
 import pandas as pd
 import streamlit as st
 
@@ -13,16 +12,23 @@ META_FILE = MODEL_DIR / 'meta.json'
 st.set_page_config(page_title="House Price Predictor", layout="centered")
 st.title("🏠 House Price Predictor")
 
+# Check if model and metadata exist
 if not MODEL_FILE.exists() or not META_FILE.exists():
     st.warning("Model or metadata not found. Run `python train.py` first.")
     st.stop()
 
+# Load model and metadata
 model = joblib.load(MODEL_FILE)
 meta = json.loads(META_FILE.read_text())
 
 st.sidebar.header("Settings")
 mode = st.sidebar.selectbox("Mode", ["California (form)", "CSV (upload row)"])
 
+# Helper function to ensure prediction is never zero
+def sanitize_pred(pred):
+    return pred if pred != 0 else 1e-3
+
+# Form mode
 if mode == "California (form)":
     st.header("Predict using features")
 
@@ -35,12 +41,11 @@ if mode == "California (form)":
     X_user = pd.DataFrame([user_input])
 
     if st.button("Predict"):
-        # Make prediction
         raw_pred = model.predict(X_user)[0]
-        # Prevent negative predictions
-        pred = max(raw_pred, 0)
+        pred = sanitize_pred(raw_pred)
         st.success(f"Predicted House Price: ${pred:,.2f}")
 
+# CSV upload mode
 else:
     st.header("Upload CSV")
     uploaded = st.file_uploader("CSV file", type=['csv'])
@@ -49,7 +54,10 @@ else:
         df = pd.read_csv(uploaded)
 
         if st.button("Predict from CSV"):
-            raw_pred = model.predict(df)[0]
-            pred = max(raw_pred, 0)
-            st.success(f"Predicted House Price: ${pred:,.2f}")
-            st.write(df)
+            raw_preds = model.predict(df)
+            preds = [sanitize_pred(p) for p in raw_preds]
+
+            # Show predictions
+            df['Predicted_Price'] = preds
+            st.success("Predicted House Prices:")
+            st.dataframe(df)
