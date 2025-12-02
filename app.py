@@ -12,23 +12,21 @@ META_FILE = MODEL_DIR / 'meta.json'
 st.set_page_config(page_title="House Price Predictor", layout="centered")
 st.title("🏠 House Price Predictor")
 
-# Check if model and metadata exist
 if not MODEL_FILE.exists() or not META_FILE.exists():
     st.warning("Model or metadata not found. Run `python train.py` first.")
     st.stop()
 
-# Load model and metadata
 model = joblib.load(MODEL_FILE)
 meta = json.loads(META_FILE.read_text())
 
 st.sidebar.header("Settings")
 mode = st.sidebar.selectbox("Mode", ["California (form)", "CSV (upload row)"])
 
-# Helper function to ensure prediction is always positive
-def sanitize_pred(pred):
-    return max(pred, 1e-3)  # replace zero or negative with small positive number
+# Ensure prediction is always positive
+def sanitize_pred(pred, min_price=1):
+    """Replace zero or negative predictions with min_price."""
+    return max(pred, min_price)
 
-# Form mode
 if mode == "California (form)":
     st.header("Predict using features")
 
@@ -42,10 +40,9 @@ if mode == "California (form)":
 
     if st.button("Predict"):
         raw_pred = model.predict(X_user)[0]
-        pred = sanitize_pred(raw_pred)
+        pred = sanitize_pred(raw_pred, min_price=1)  # always positive
         st.success(f"Predicted House Price: ${pred:,.2f}")
 
-# CSV upload mode
 else:
     st.header("Upload CSV")
     uploaded = st.file_uploader("CSV file", type=['csv'])
@@ -55,9 +52,7 @@ else:
 
         if st.button("Predict from CSV"):
             raw_preds = model.predict(df)
-            preds = [sanitize_pred(p) for p in raw_preds]
-
-            # Add predictions to dataframe
+            preds = [sanitize_pred(p, min_price=1) for p in raw_preds]
             df['Predicted_Price'] = preds
             st.success("Predicted House Prices:")
             st.dataframe(df)
