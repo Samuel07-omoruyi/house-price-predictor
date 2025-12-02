@@ -24,9 +24,9 @@ meta = json.loads(META_FILE.read_text())
 st.sidebar.header("Settings")
 mode = st.sidebar.selectbox("Mode", ["California (form)", "CSV (upload row)"])
 
-# Helper function to ensure prediction is never zero
+# Helper function to ensure prediction is always positive
 def sanitize_pred(pred):
-    return pred if pred != 0 else 1e-3
+    return max(pred, 1e-3)  # replace zero or negative with small positive number
 
 # Form mode
 if mode == "California (form)":
@@ -57,7 +57,7 @@ else:
             raw_preds = model.predict(df)
             preds = [sanitize_pred(p) for p in raw_preds]
 
-            # Show predictions
+            # Add predictions to dataframe
             df['Predicted_Price'] = preds
             st.success("Predicted House Prices:")
             st.dataframe(df)
