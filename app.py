@@ -24,8 +24,14 @@ mode = st.sidebar.selectbox("Mode", ["California (form)", "CSV (upload row)"])
 
 # Ensure prediction is always positive
 def sanitize_pred(pred, min_price=1):
-    """Replace zero or negative predictions with min_price."""
     return max(pred, min_price)
+
+# Normalize longitude to [-180, 180] range
+def normalize_longitude(lon):
+    lon = lon % 360
+    if lon > 180:
+        lon -= 360
+    return lon
 
 if mode == "California (form)":
     st.header("Predict using features")
@@ -34,13 +40,16 @@ if mode == "California (form)":
     user_input = {}
     for col in numeric_cols:
         val = st.number_input(col, value=0.0)
+        # Normalize longitude if the column matches
+        if col.lower() == "longitude":
+            val = normalize_longitude(val)
         user_input[col] = val
 
     X_user = pd.DataFrame([user_input])
 
     if st.button("Predict"):
         raw_pred = model.predict(X_user)[0]
-        pred = sanitize_pred(raw_pred, min_price=1)  # always positive
+        pred = sanitize_pred(raw_pred, min_price=1)
         st.success(f"Predicted House Price: ${pred:,.2f}")
 
 else:
@@ -49,6 +58,10 @@ else:
 
     if uploaded:
         df = pd.read_csv(uploaded)
+
+        # Normalize longitude column if exists
+        if 'Longitude' in df.columns:
+            df['Longitude'] = df['Longitude'].apply(normalize_longitude)
 
         if st.button("Predict from CSV"):
             raw_preds = model.predict(df)
