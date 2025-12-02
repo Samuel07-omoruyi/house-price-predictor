@@ -11,7 +11,6 @@ MODEL_FILE = MODEL_DIR / 'model.joblib'
 META_FILE = MODEL_DIR / 'meta.json'
 
 st.set_page_config(page_title="House Price Predictor", layout="centered")
-
 st.title("🏠 House Price Predictor")
 
 if not MODEL_FILE.exists() or not META_FILE.exists():
@@ -36,8 +35,11 @@ if mode == "California (form)":
     X_user = pd.DataFrame([user_input])
 
     if st.button("Predict"):
-        pred = model.predict(X_user)[0]
-        st.success(f"Predicted price: {pred:,.2f}")
+        # Make prediction
+        raw_pred = model.predict(X_user)[0]
+        # Prevent negative predictions
+        pred = max(raw_pred, 0)
+        st.success(f"Predicted House Price: ${pred:,.2f}")
 
 else:
     st.header("Upload CSV")
@@ -47,6 +49,7 @@ else:
         df = pd.read_csv(uploaded)
 
         if st.button("Predict from CSV"):
-            pred = model.predict(df)[0]
-            st.success(f"Predicted price: {pred:,.2f}")
+            raw_pred = model.predict(df)[0]
+            pred = max(raw_pred, 0)
+            st.success(f"Predicted House Price: ${pred:,.2f}")
             st.write(df)
